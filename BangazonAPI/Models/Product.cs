@@ -21,6 +21,8 @@ namespace BangazonAPI.Models
 
         public int Quantity { get; set; }
 
+        public bool Archived { get; set; }
+
 
     }
 }
