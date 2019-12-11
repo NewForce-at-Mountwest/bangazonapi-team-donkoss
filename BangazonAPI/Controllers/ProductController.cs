@@ -180,7 +180,46 @@ namespace BangazonAPI.Controllers
             }
         }
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete([FromRoute] int id)
+
+        //public async Task<IActionResult> Delete([FromRoute] int id)
+        //{
+        //    try
+        //    {
+        //        using (SqlConnection conn = Connection)
+        //        {
+        //            conn.Open();
+        //            using (SqlCommand cmd = conn.CreateCommand())
+        //            {
+        //                cmd.CommandText = @"UPDATE Product
+        //                                    SET Archived = 1
+        //                                    WHERE id = @id";
+        //                cmd.Parameters.Add(new SqlParameter("@id", id));
+
+        //                int rowsAffected = cmd.ExecuteNonQuery();
+        //                if (rowsAffected > 0)
+        //                {
+        //                    return new StatusCodeResult(StatusCodes.Status204NoContent);
+        //                }
+        //                throw new Exception("No rows affected");
+        //            }
+        //        }
+        //    }
+        //    catch (Exception)
+        //    {
+        //        if (!ProductExists(id))
+        //        {
+        //            return NotFound();
+        //        }
+        //        else
+        //        {
+        //            throw;
+        //        }
+        //    }
+        //}
+
+        //Method for hard delete
+
+        public async Task<IActionResult> Delete([FromRoute] int id, bool HardDelete)
         {
             try
             {
@@ -189,7 +228,15 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
+                        if (HardDelete == true) { 
+
                         cmd.CommandText = @"DELETE FROM Product WHERE Id = @id";
+                    } else
+                    {
+                        cmd.CommandText = @"UPDATE Product
+                                            SET Archived = 1
+                                            WHERE id = @id";
+                    }
                         cmd.Parameters.Add(new SqlParameter("@id", id));
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
