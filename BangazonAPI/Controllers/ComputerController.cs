@@ -64,7 +64,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Computer.Id, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer AS 'Computer Id', Computer.Archived AS 'Computer Name' FROM Computer LEFT JOIN Computer on Computer.Manufacturer = Computer.Id WHERE Computer.Id = @id";
+                        SELECT Computer.Id, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer, Computer.Archived FROM Computer WHERE Computer.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
                     Computer computer = null;
@@ -73,15 +73,11 @@ namespace BangazonAPI.Controllers
                         computer = new Computer
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            PurchaseDate = reader.GetString(reader.GetOrdinal("PurchaseDate")),
-                            DecomissionDate = reader.GetString(reader.GetOrdinal("DecomissionDate")),
+                            PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                            DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
                             Make = reader.GetString(reader.GetOrdinal("Make")),
-                            Manufacturer = reader.GetInt32(reader.GetOrdinal("Computer Id")),
-                            Computer = new Computer
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("Computer Id")),
-                                Name = reader.GetString(reader.GetOrdinal("Computer Name"))
-                            }
+                            Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
                         };
                     }
                     reader.Close();
@@ -97,13 +93,14 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate, DecomissionDate, Make, Manufacturer)
+                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate, DecomissionDate, Make, Manufacturer, Archived)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@firstName, @lastName, @slackHandle, @cohortId)";
-                    cmd.Parameters.Add(new SqlParameter("@firstName", computer.PurchaseDate));
-                    cmd.Parameters.Add(new SqlParameter("@lastName", computer.DecomissionDate));
-                    cmd.Parameters.Add(new SqlParameter("@slackHandle", computer.Make));
-                    cmd.Parameters.Add(new SqlParameter("@cohortId", computer.Manufacturer));
+                                        VALUES (@PurchaseDate, @DecomissionDate, @Make, @Manufacturer, @Archived)";
+                    cmd.Parameters.Add(new SqlParameter("@PurchaseDate", computer.PurchaseDate));
+                    cmd.Parameters.Add(new SqlParameter("@DecomissionDate", computer.DecomissionDate));
+                    cmd.Parameters.Add(new SqlParameter("@Make", computer.Make));
+                    cmd.Parameters.Add(new SqlParameter("@Manufacturer", computer.Manufacturer));
+                    cmd.Parameters.Add(new SqlParameter("@Archived", computer.Archived));
                     int newId = (int)cmd.ExecuteScalar();
                     computer.Id = newId;
                     return CreatedAtRoute("GetComputer", new { id = newId }, computer);
@@ -121,15 +118,17 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"UPDATE Computer
-                                            SET PurchaseDate = @firstName,
-                                                DecomissionDate = @lastName,
-                                                Make = @slackHandle,
-                                                Manufacturer = @cohortId
+                                            SET PurchaseDate = @PurchaseDate,
+                                                DecomissionDate = @DecomissionDate,
+                                                Make = @Make,
+                                                Manufacturer = @Manufacturer,
+                                                Archived = @Archived
                                             WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@firstName", computer.PurchaseDate));
-                        cmd.Parameters.Add(new SqlParameter("@lastName", computer.DecomissionDate));
-                        cmd.Parameters.Add(new SqlParameter("@slackHandle", computer.Make));
-                        cmd.Parameters.Add(new SqlParameter("@cohortId", computer.Manufacturer));
+                        cmd.Parameters.Add(new SqlParameter("@PurchaseDate", computer.PurchaseDate));
+                        cmd.Parameters.Add(new SqlParameter("@DecomissionDate", computer.DecomissionDate));
+                        cmd.Parameters.Add(new SqlParameter("@Make", computer.Make));
+                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", computer.Manufacturer));
+                        cmd.Parameters.Add(new SqlParameter("@Archived", computer.Archived));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
@@ -193,7 +192,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, PurchaseDate, DecomissionDate, Make, Manufacturer
+                        SELECT Id, PurchaseDate, DecomissionDate, Make, Manufacturer, Archived,
                         FROM Computer
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
