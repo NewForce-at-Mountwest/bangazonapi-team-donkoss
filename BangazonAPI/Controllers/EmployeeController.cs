@@ -13,11 +13,11 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PaymentTypeController : ControllerBase
+    public class EmployeeController : ControllerBase
     {
         private readonly IConfiguration _config;
 
-        public PaymentTypeController(IConfiguration config)
+        public EmployeeController(IConfiguration config)
         {
             _config = config;
         }
@@ -38,25 +38,27 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT PaymentType.Id, PaymentType.AcctNumber, PaymentType.Name, PaymentType.Archived";
+                    cmd.CommandText = "SELECT Employee.Id, Employee.FirstName, Employee.LastName, Employee.Archived, Employee.IsSupervisor, Employee.ComputerId, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer, Department.Name AS 'Department Name' FROM Employee LEFT JOIN Department on Employee.DepartmentId = Department.Id LEFT JOIN Computer on Employee.ComputerId = Computer.Id";
                     SqlDataReader reader = cmd.ExecuteReader();
-                    List<PaymentType> paymentTypes = new List<PaymentType>();
+                    List<Employee> employees = new List<Employee>();
 
                     while (reader.Read())
                     {
-                        PaymentType paymentType = new PaymentType
+                        Employee employee = new Employee
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            AcctNumber = reader.GetInt32(reader.GetOrdinal("AcctNumber")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived"))
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
+                            DepartmentName = reader.GetString(reader.GetOrdinal("Department Name"))
                         };
 
-                        paymentTypes.Add(paymentType);
+                        employees.Add(employee);
                     }
                     reader.Close();
 
-                    return Ok(paymentTypes);
+                    return Ok(employees);
                 }
             }
         }
@@ -70,7 +72,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT PaymentType.Id, PaymentType.AcctNumber, PaymentType.Name, PaymentType.Archived WHERE PaymentType.Id = @id";
+                        SELECT PaymentType.Id, PaymentType.AcctNumber, PaymentType.Name, PaymentType.Archived, PaymentType.CustomerId AS 'Customer Id' FROM PaymentType LEFT JOIN Customer on PaymentType.CustomerId = Customer.Id WHERE PaymentType.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -83,6 +85,7 @@ namespace BangazonAPI.Controllers
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             AcctNumber = reader.GetInt32(reader.GetOrdinal("AcctNumber")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
+                            CustomerId = reader.GetInt32(reader.GetOrdinal("Customer Id")),
                             Archived = reader.GetBoolean(reader.GetOrdinal("Archived"))
                         };
                     }
