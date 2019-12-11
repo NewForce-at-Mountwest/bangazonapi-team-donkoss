@@ -6,16 +6,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using StudentExercisesAPI.Models;
+using BangazonAPI.Models;
 using Microsoft.AspNetCore.Http;
-namespace StudentExercisesAPI.Controllers
+namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class InstructorsController : ControllerBase
+    public class ComputerController : ControllerBase
     {
         private readonly IConfiguration _config;
-        public InstructorsController(IConfiguration config)
+        public ComputerController(IConfiguration config)
         {
             _config = config;
         }
@@ -34,32 +34,28 @@ namespace StudentExercisesAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT Instructor.Id, Instructor.FirstName, Instructor.LastName, Instructor.SlackHandle, Instructor.CohortId AS 'Cohort Id', Cohort.Name AS 'Cohort Name' FROM Instructor LEFT JOIN Cohort on Instructor.CohortId = Cohort.Id";
+                    cmd.CommandText = "SELECT Computer.Id, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer, Computer.Archived FROM Computer";
                     SqlDataReader reader = cmd.ExecuteReader();
-                    List<Instructor> instructors = new List<Instructor>();
+                    List<Computer> computers = new List<Computer>();
                     while (reader.Read())
                     {
-                        Instructor instructor = new Instructor
+                        Computer computer = new Computer
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
-                            CohortId = reader.GetInt32(reader.GetOrdinal("Cohort Id")),
-                            Cohort = new Cohort
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("Cohort Id")),
-                                Name = reader.GetString(reader.GetOrdinal("Cohort Name"))
-                            }
+                            PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                            DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                            Make = reader.GetString(reader.GetOrdinal("Make")),
+                            Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived"))
                         };
-                        instructors.Add(instructor);
+                        computers.Add(computer);
                     }
                     reader.Close();
-                    return Ok(instructors);
+                    return Ok(computers);
                 }
             }
         }
-        [HttpGet("{id}", Name = "GetInstructor")]
+        [HttpGet("{id}", Name = "GetComputer")]
         public async Task<IActionResult> Get([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
@@ -68,54 +64,54 @@ namespace StudentExercisesAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Instructor.Id, Instructor.FirstName, Instructor.LastName, Instructor.SlackHandle, Instructor.CohortId AS 'Cohort Id', Cohort.Name AS 'Cohort Name' FROM Instructor LEFT JOIN Cohort on Instructor.CohortId = Cohort.Id WHERE Instructor.Id = @id";
+                        SELECT Computer.Id, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer AS 'Computer Id', Computer.Archived AS 'Computer Name' FROM Computer LEFT JOIN Computer on Computer.Manufacturer = Computer.Id WHERE Computer.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
-                    Instructor instructor = null;
+                    Computer computer = null;
                     if (reader.Read())
                     {
-                        instructor = new Instructor
+                        computer = new Computer
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
-                            CohortId = reader.GetInt32(reader.GetOrdinal("Cohort Id")),
-                            Cohort = new Cohort
+                            PurchaseDate = reader.GetString(reader.GetOrdinal("PurchaseDate")),
+                            DecomissionDate = reader.GetString(reader.GetOrdinal("DecomissionDate")),
+                            Make = reader.GetString(reader.GetOrdinal("Make")),
+                            Manufacturer = reader.GetInt32(reader.GetOrdinal("Computer Id")),
+                            Computer = new Computer
                             {
-                                Id = reader.GetInt32(reader.GetOrdinal("Cohort Id")),
-                                Name = reader.GetString(reader.GetOrdinal("Cohort Name"))
+                                Id = reader.GetInt32(reader.GetOrdinal("Computer Id")),
+                                Name = reader.GetString(reader.GetOrdinal("Computer Name"))
                             }
                         };
                     }
                     reader.Close();
-                    return Ok(instructor);
+                    return Ok(computer);
                 }
             }
         }
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Instructor instructor)
+        public async Task<IActionResult> Post([FromBody] Computer computer)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO Instructor (FirstName, LastName, SlackHandle, CohortId)
+                    cmd.CommandText = @"INSERT INTO Computer (PurchaseDate, DecomissionDate, Make, Manufacturer)
                                         OUTPUT INSERTED.Id
                                         VALUES (@firstName, @lastName, @slackHandle, @cohortId)";
-                    cmd.Parameters.Add(new SqlParameter("@firstName", instructor.FirstName));
-                    cmd.Parameters.Add(new SqlParameter("@lastName", instructor.LastName));
-                    cmd.Parameters.Add(new SqlParameter("@slackHandle", instructor.SlackHandle));
-                    cmd.Parameters.Add(new SqlParameter("@cohortId", instructor.CohortId));
+                    cmd.Parameters.Add(new SqlParameter("@firstName", computer.PurchaseDate));
+                    cmd.Parameters.Add(new SqlParameter("@lastName", computer.DecomissionDate));
+                    cmd.Parameters.Add(new SqlParameter("@slackHandle", computer.Make));
+                    cmd.Parameters.Add(new SqlParameter("@cohortId", computer.Manufacturer));
                     int newId = (int)cmd.ExecuteScalar();
-                    instructor.Id = newId;
-                    return CreatedAtRoute("GetInstructor", new { id = newId }, instructor);
+                    computer.Id = newId;
+                    return CreatedAtRoute("GetComputer", new { id = newId }, computer);
                 }
             }
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Instructor instructor)
+        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Computer computer)
         {
             try
             {
@@ -124,16 +120,16 @@ namespace StudentExercisesAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"UPDATE Instructor
-                                            SET FirstName = @firstName,
-                                                LastName = @lastName,
-                                                SlackHandle = @slackHandle,
-                                                CohortId = @cohortId
+                        cmd.CommandText = @"UPDATE Computer
+                                            SET PurchaseDate = @firstName,
+                                                DecomissionDate = @lastName,
+                                                Make = @slackHandle,
+                                                Manufacturer = @cohortId
                                             WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@firstName", instructor.FirstName));
-                        cmd.Parameters.Add(new SqlParameter("@lastName", instructor.LastName));
-                        cmd.Parameters.Add(new SqlParameter("@slackHandle", instructor.SlackHandle));
-                        cmd.Parameters.Add(new SqlParameter("@cohortId", instructor.CohortId));
+                        cmd.Parameters.Add(new SqlParameter("@firstName", computer.PurchaseDate));
+                        cmd.Parameters.Add(new SqlParameter("@lastName", computer.DecomissionDate));
+                        cmd.Parameters.Add(new SqlParameter("@slackHandle", computer.Make));
+                        cmd.Parameters.Add(new SqlParameter("@cohortId", computer.Manufacturer));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
@@ -146,7 +142,7 @@ namespace StudentExercisesAPI.Controllers
             }
             catch (Exception)
             {
-                if (!InstructorExists(id))
+                if (!ComputerExists(id))
                 {
                     return NotFound();
                 }
@@ -166,7 +162,7 @@ namespace StudentExercisesAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE FROM Instructor WHERE Id = @id";
+                        cmd.CommandText = @"DELETE FROM Computer WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
@@ -179,7 +175,7 @@ namespace StudentExercisesAPI.Controllers
             }
             catch (Exception)
             {
-                if (!InstructorExists(id))
+                if (!ComputerExists(id))
                 {
                     return NotFound();
                 }
@@ -189,7 +185,7 @@ namespace StudentExercisesAPI.Controllers
                 }
             }
         }
-        private bool InstructorExists(int id)
+        private bool ComputerExists(int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -197,8 +193,8 @@ namespace StudentExercisesAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, FirstName, LastName, SlackHandle, CohortId
-                        FROM Instructor
+                        SELECT Id, PurchaseDate, DecomissionDate, Make, Manufacturer
+                        FROM Computer
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
