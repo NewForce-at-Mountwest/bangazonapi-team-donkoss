@@ -34,7 +34,8 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT ProductType.Id, ProductType.Name, ProductType.Archived";
+                    cmd.CommandText = @"SELECT ProductType.Id AS Id, ProductType.Name AS Name FROM ProductType";
+                    ;
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<ProductType> producttypes = new List<ProductType>();
                     while (reader.Read())
@@ -42,9 +43,7 @@ namespace BangazonAPI.Controllers
                         ProductType producttype = new ProductType
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived"))
-
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
                         };
                         producttypes.Add(producttype);
                     }
@@ -62,38 +61,37 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText =
-                                        @"SELECT ProductType.Id, ProductType.Name, PrpductType.Archived";
+                                        @"SELECT ProductType.Id AS Id, ProductType.Name AS Name From ProductType Where ProductType.Id = @Id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
-                    Product productType = null;
+                    ProductType productType = null;
                     if (reader.Read())
                     {
                         productType = new ProductType
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived"))
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
+
                         };
-                        
+                    }
                     reader.Close();
                     return Ok(productType);
                 }
             }
-        } 
+        }
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Product productType)
+        public async Task<IActionResult> Post([FromBody] ProductType productType)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO ProductType (Id, Name,  Archived)
+                    cmd.CommandText = @"INSERT INTO ProductType (Name, Archived)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@Name, @Id, @archived)";
-                    cmd.Parameters.Add(new SqlParameter("@productTypeId", productType.Id));
+                                        VALUES (@Name, @Archived)";
                     cmd.Parameters.Add(new SqlParameter("@Name", productType.Name));
-                    cmd.Parameters.Add(new SqlParameter("@archived", productType.Archived));
+                    cmd.Parameters.Add(new SqlParameter("@Archived", productType.Archived));
                     int newId = (int)cmd.ExecuteScalar();
                     productType.Id = newId;
                     return CreatedAtRoute("GetProductType", new { id = newId }, productType);
@@ -112,13 +110,13 @@ namespace BangazonAPI.Controllers
                     {
                         cmd.CommandText = @"UPDATE ProductType
                                             SET
-                                                Id = @Id,
                                                 Name = @name,
                                                 Archived = @archived
                                             WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@Id", productType.Id));
-                        cmd.Parameters.Add(new SqlParameter("@Name", productType.Name));
+                        cmd.Parameters.Add(new SqlParameter("@productTypeId", productType.Id));
+                        cmd.Parameters.Add(new SqlParameter("@name", productType.Name));
                         cmd.Parameters.Add(new SqlParameter("@archived", productType.Archived));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
                         {
@@ -190,7 +188,5 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
-
-
     }
 }
