@@ -87,10 +87,10 @@ namespace BangazonAPI.Controllers
                     
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
-                    Product productType = null;
+                    Product product = null;
                     if (reader.Read())
                     {
-                        productType = new Product
+                        product = new Product
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             ProductTypeId = reader.GetInt32(reader.GetOrdinal("Product Type Id")),
@@ -103,12 +103,12 @@ namespace BangazonAPI.Controllers
                         };
                     }
                     reader.Close();
-                    return Ok(productType);
+                    return Ok(product);
                 }
             }
         }
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Product productType)
+        public async Task<IActionResult> Post([FromBody] Product product)
         {
             using (SqlConnection conn = Connection)
             {
@@ -118,21 +118,21 @@ namespace BangazonAPI.Controllers
                     cmd.CommandText = @"INSERT INTO Product (ProductTypeId, CustomerId, Price, Title, Description, Quantity, Archived)
                                         OUTPUT INSERTED.Id
                                         VALUES (@productTypeId, @customerId, @price, @title, @description, @quantity, @archived)";
-                    cmd.Parameters.Add(new SqlParameter("@productTypeId", productType.ProductTypeId));
-                    cmd.Parameters.Add(new SqlParameter("@customerId", productType.CustomerId));
-                    cmd.Parameters.Add(new SqlParameter("@price", productType.Price));
-                    cmd.Parameters.Add(new SqlParameter("@title", productType.Title));
-                    cmd.Parameters.Add(new SqlParameter("@description", productType.Description));
-                    cmd.Parameters.Add(new SqlParameter("@quantity", productType.Quantity));
-                    cmd.Parameters.Add(new SqlParameter("@archived", productType.Archived));
+                    cmd.Parameters.Add(new SqlParameter("@productTypeId", product.ProductTypeId));
+                    cmd.Parameters.Add(new SqlParameter("@customerId", product.CustomerId));
+                    cmd.Parameters.Add(new SqlParameter("@price", product.Price));
+                    cmd.Parameters.Add(new SqlParameter("@title", product.Title));
+                    cmd.Parameters.Add(new SqlParameter("@description", product.Description));
+                    cmd.Parameters.Add(new SqlParameter("@quantity", product.Quantity));
+                    cmd.Parameters.Add(new SqlParameter("@archived", product.Archived));
                     int newId = (int)cmd.ExecuteScalar();
-                    productType.Id = newId;
-                    return CreatedAtRoute("GetProduct", new { id = newId }, productType);
+                    product.Id = newId;
+                    return CreatedAtRoute("GetProduct", new { id = newId }, product);
                 }
             }
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Product productType)
+        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Product product)
         {
             try
             {
@@ -150,13 +150,13 @@ namespace BangazonAPI.Controllers
                                                 Quantity = @quantity,
                                                 Archived = @archived
                                             WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@productTypeId", productType.ProductTypeId));
-                        cmd.Parameters.Add(new SqlParameter("@customerId", productType.CustomerId));
-                        cmd.Parameters.Add(new SqlParameter("@price", productType.Price));
-                        cmd.Parameters.Add(new SqlParameter("@title", productType.Title));
-                        cmd.Parameters.Add(new SqlParameter("@description", productType.Description));
-                        cmd.Parameters.Add(new SqlParameter("@quantity", productType.Quantity));
-                        cmd.Parameters.Add(new SqlParameter("@archived", productType.Archived));
+                        cmd.Parameters.Add(new SqlParameter("@productTypeId", product.ProductTypeId));
+                        cmd.Parameters.Add(new SqlParameter("@customerId", product.CustomerId));
+                        cmd.Parameters.Add(new SqlParameter("@price", product.Price));
+                        cmd.Parameters.Add(new SqlParameter("@title", product.Title));
+                        cmd.Parameters.Add(new SqlParameter("@description", product.Description));
+                        cmd.Parameters.Add(new SqlParameter("@quantity", product.Quantity));
+                        cmd.Parameters.Add(new SqlParameter("@archived", product.Archived));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
@@ -181,44 +181,7 @@ namespace BangazonAPI.Controllers
         }
         [HttpDelete("{id}")]
 
-        //public async Task<IActionResult> Delete([FromRoute] int id)
-        //{
-        //    try
-        //    {
-        //        using (SqlConnection conn = Connection)
-        //        {
-        //            conn.Open();
-        //            using (SqlCommand cmd = conn.CreateCommand())
-        //            {
-        //                cmd.CommandText = @"UPDATE Product
-        //                                    SET Archived = 1
-        //                                    WHERE id = @id";
-        //                cmd.Parameters.Add(new SqlParameter("@id", id));
-
-        //                int rowsAffected = cmd.ExecuteNonQuery();
-        //                if (rowsAffected > 0)
-        //                {
-        //                    return new StatusCodeResult(StatusCodes.Status204NoContent);
-        //                }
-        //                throw new Exception("No rows affected");
-        //            }
-        //        }
-        //    }
-        //    catch (Exception)
-        //    {
-        //        if (!ProductExists(id))
-        //        {
-        //            return NotFound();
-        //        }
-        //        else
-        //        {
-        //            throw;
-        //        }
-        //    }
-        //}
-
-        //Method for hard delete
-
+           /// Method to soft delete by setting archived boolean to true, includes method to hard delete from the database using parameter HardDelete
         public async Task<IActionResult> Delete([FromRoute] int id, bool HardDelete)
         {
             try
