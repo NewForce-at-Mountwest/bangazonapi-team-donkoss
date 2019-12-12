@@ -38,7 +38,7 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT Employee.Id, Employee.FirstName, Employee.LastName, Employee.Archived, Employee.IsSupervisor, Employee.ComputerId, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer, Department.Name AS 'Department Name' FROM Employee LEFT JOIN Department on Employee.DepartmentId = Department.Id LEFT JOIN Computer on Employee.ComputerId = Computer.Id";
+                    cmd.CommandText = "SELECT Employee.Id, Employee.FirstName, Employee.LastName, Employee.Archived, Employee.IsSupervisor, Employee.DepartmentId, ComputerEmployee.ComputerId, ComputerEmployee.AssignDate, ComputerEmployee.UnassignDate, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer, Computer.Archived, Department.Name AS 'Department Name' FROM Employee LEFT JOIN Department on Employee.DepartmentId = Department.Id JOIN ComputerEmployee on ComputerEmployee.EmployeeId = Employee.Id JOIN Computer ON ComputerEmployee.ComputerId = Computer.Id WHERE ComputerEmployee.UnassignDate is NULL";
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Employee> employees = new List<Employee>();
 
@@ -51,7 +51,17 @@ namespace BangazonAPI.Controllers
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
                             IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
                             Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
-                            DepartmentName = reader.GetString(reader.GetOrdinal("Department Name"))
+                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                            DepartmentName = reader.GetString(reader.GetOrdinal("Department Name")),
+                            Computer = new Computer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
+                            }
                         };
 
                         employees.Add(employee);
@@ -63,7 +73,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        [HttpGet("{id}", Name = "GetPaymentType")]
+        [HttpGet("{id}", Name = "GetEmployee")]
         public async Task<IActionResult> Get([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
@@ -72,55 +82,67 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT PaymentType.Id, PaymentType.AcctNumber, PaymentType.Name, PaymentType.Archived, PaymentType.CustomerId AS 'Customer Id' FROM PaymentType LEFT JOIN Customer on PaymentType.CustomerId = Customer.Id WHERE PaymentType.Id = @id";
+                        SELECT Employee.Id, Employee.FirstName, Employee.LastName, Employee.Archived, Employee.IsSupervisor, Employee.DepartmentId, ComputerEmployee.ComputerId, ComputerEmployee.AssignDate, ComputerEmployee.UnassignDate, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer, Computer.Archived, Department.Name AS 'Department Name' FROM Employee LEFT JOIN Department on Employee.DepartmentId = Department.Id JOIN ComputerEmployee on ComputerEmployee.EmployeeId = Employee.Id JOIN Computer ON ComputerEmployee.ComputerId = Computer.Id WHERE ComputerEmployee.UnassignDate is NULL AND Employee.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    PaymentType paymentType = null;
+                    Employee employee = null;
 
                     if (reader.Read())
                     {
-                        paymentType = new PaymentType
+                        employee = new Employee
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            AcctNumber = reader.GetInt32(reader.GetOrdinal("AcctNumber")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("Customer Id")),
-                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived"))
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
+                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                            DepartmentName = reader.GetString(reader.GetOrdinal("Department Name")),
+                            Computer = new Computer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
+                            }
                         };
                     }
                     reader.Close();
 
-                    return Ok(paymentType);
+                    return Ok(employee);
                 }
             }
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] PaymentType paymentType)
+        public async Task<IActionResult> Post([FromBody] Employee employee)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"INSERT INTO PaymentType (AcctNumber, Name, CustomerId, Archived)
+                    cmd.CommandText = @"INSERT INTO Employee (FirstName, LastName, IsSupervisor, Archived, DepartmentId)
                                         OUTPUT INSERTED.Id
-                                        VALUES (@acctNumber, @name, @customerId, @archived)";
-                    cmd.Parameters.Add(new SqlParameter("@acctNumber", paymentType.AcctNumber));
-                    cmd.Parameters.Add(new SqlParameter("@name", paymentType.Name));
-                    cmd.Parameters.Add(new SqlParameter("@customerId", paymentType.CustomerId));
-                    cmd.Parameters.Add(new SqlParameter("@archived", paymentType.Archived));
+                                        VALUES (@firstName, @lastName, @isSupervisor, @archived, @departmentId)";
+                    cmd.Parameters.Add(new SqlParameter("@firstName", employee.FirstName));
+                    cmd.Parameters.Add(new SqlParameter("@lastName", employee.LastName));
+                    cmd.Parameters.Add(new SqlParameter("@isSupervisor", employee.IsSupervisor));
+                    cmd.Parameters.Add(new SqlParameter("@archived", employee.Archived));
+                    cmd.Parameters.Add(new SqlParameter("@departmentId", employee.DepartmentId));
 
                     int newId = (int)cmd.ExecuteScalar();
-                    paymentType.Id = newId;
-                    return CreatedAtRoute("GetPaymentType", new { id = newId }, paymentType);
+                    employee.Id = newId;
+                    return CreatedAtRoute("GetEmployee", new { id = newId }, employee);
                 }
             }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] PaymentType paymentType)
+        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Employee employee)
         {
             try
             {
@@ -129,16 +151,18 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"UPDATE PaymentType
-                                            SET AcctNumber = @acctNumber,
-                                                Name = @name,
-                                                CustomerId = @customerId,
-                                                Archived = @archived
+                        cmd.CommandText = @"UPDATE Employee
+                                            SET FirstName = @firstName,
+                                                LastName = @lastName,
+                                                IsSupervisor = @isSupervisor,
+                                                Archived = @archived,
+                                                DepartmentId = @departmentId
                                             WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@acctNumber", paymentType.AcctNumber));
-                        cmd.Parameters.Add(new SqlParameter("@name", paymentType.Name));
-                        cmd.Parameters.Add(new SqlParameter("@customerId", paymentType.CustomerId));
-                        cmd.Parameters.Add(new SqlParameter("@archived", paymentType.Archived));
+                        cmd.Parameters.Add(new SqlParameter("@firstName", employee.FirstName));
+                        cmd.Parameters.Add(new SqlParameter("@lastName", employee.LastName));
+                        cmd.Parameters.Add(new SqlParameter("@isSupervisor", employee.IsSupervisor));
+                        cmd.Parameters.Add(new SqlParameter("@archived", employee.Archived));
+                        cmd.Parameters.Add(new SqlParameter("@departmentId", employee.DepartmentId));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
@@ -152,7 +176,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (!PaymentTypeExists(id))
+                if (!EmployeeExists(id))
                 {
                     return NotFound();
                 }
@@ -173,7 +197,7 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"UPDATE PaymentType
+                        cmd.CommandText = @"UPDATE Employee
                                             SET Archived = 1
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
@@ -189,7 +213,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (!PaymentTypeExists(id))
+                if (!EmployeeExists(id))
                 {
                     return NotFound();
                 }
@@ -200,7 +224,7 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        private bool PaymentTypeExists(int id)
+        private bool EmployeeExists(int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -208,8 +232,8 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, AcctNumber, Name, CustomerId, Archived
-                        FROM PaymentType
+                        SELECT Id, FirstName, LastName, IsSupervisor, Archived, DepartmentId
+                        FROM Employee
                         WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
