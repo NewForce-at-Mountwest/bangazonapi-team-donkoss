@@ -38,33 +38,72 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT Employee.Id, Employee.FirstName, Employee.LastName, Employee.Archived, Employee.IsSupervisor, Employee.DepartmentId, ComputerEmployee.ComputerId, ComputerEmployee.AssignDate, ComputerEmployee.UnassignDate, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer, Computer.Archived, Department.Name AS 'Department Name' FROM Employee LEFT JOIN Department on Employee.DepartmentId = Department.Id JOIN ComputerEmployee on ComputerEmployee.EmployeeId = Employee.Id JOIN Computer ON ComputerEmployee.ComputerId = Computer.Id WHERE ComputerEmployee.UnassignDate is NULL";
+                    cmd.CommandText = @"SELECT Employee.Id, Employee.FirstName, Employee.LastName, Employee.Archived, Employee.IsSupervisor, Employee.DepartmentId, ComputerEmployee.AssignDate, ComputerEmployee.UnassignDate, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer, Computer.Archived AS 'Computer Archived', Department.Name AS 'Department Name' 
+FROM Employee
+JOIN Department on Employee.DepartmentId = Department.Id
+LEFT JOIN ComputerEmployee on ComputerEmployee.EmployeeId = Employee.Id
+LEFT JOIN Computer ON ComputerEmployee.ComputerId = Computer.Id
+WHERE ComputerEmployee. UnassignDate is null ";
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Employee> employees = new List<Employee>();
 
+
                     while (reader.Read())
                     {
-                        Employee employee = new Employee
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
-                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
-                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
-                            DepartmentName = reader.GetString(reader.GetOrdinal("Department Name")),
-                            Computer = new Computer
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
-                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
-                                DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
-                                Make = reader.GetString(reader.GetOrdinal("Make")),
-                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
-                                Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
-                            }
-                        };
 
-                        employees.Add(employee);
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("PurchaseDate")))
+                        {
+
+
+                            Employee employee = new Employee
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                                Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
+                                DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                                DepartmentName = reader.GetString(reader.GetOrdinal("Department Name")),
+                                Computer = new Computer
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                    DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                                    Make = reader.GetString(reader.GetOrdinal("Make")),
+                                    Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                    Archived = reader.GetBoolean(reader.GetOrdinal("Computer Archived")),
+                                }
+
+                            };
+                            employees.Add(employee);
+                        }
+
+
+                        else
+                        {
+
+
+                            {
+                                Employee employee = new Employee
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                    IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                                    Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
+                                    DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                                    DepartmentName = reader.GetString(reader.GetOrdinal("Department Name"))
+
+
+                                };
+                                employees.Add(employee);
+                            }
+
+
+
+                        }
+                       
                     }
                     reader.Close();
 
@@ -72,6 +111,9 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+
+
+
 
         [HttpGet("{id}", Name = "GetEmployee")]
         public async Task<IActionResult> Get([FromRoute] int id)
@@ -82,7 +124,12 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Employee.Id, Employee.FirstName, Employee.LastName, Employee.Archived, Employee.IsSupervisor, Employee.DepartmentId, ComputerEmployee.ComputerId, ComputerEmployee.AssignDate, ComputerEmployee.UnassignDate, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer, Computer.Archived, Department.Name AS 'Department Name' FROM Employee LEFT JOIN Department on Employee.DepartmentId = Department.Id JOIN ComputerEmployee on ComputerEmployee.EmployeeId = Employee.Id JOIN Computer ON ComputerEmployee.ComputerId = Computer.Id WHERE ComputerEmployee.UnassignDate is NULL AND Employee.Id = @id";
+                       SELECT Employee.Id, Employee.FirstName, Employee.LastName, Employee.Archived, Employee.IsSupervisor, Employee.DepartmentId, ComputerEmployee.AssignDate, ComputerEmployee.UnassignDate, Computer.PurchaseDate, Computer.DecomissionDate, Computer.Make, Computer.Manufacturer, Computer.Archived AS 'Computer Archived', Department.Name AS 'Department Name' 
+FROM Employee
+JOIN Department on Employee.DepartmentId = Department.Id 
+LEFT JOIN ComputerEmployee on ComputerEmployee.EmployeeId = Employee.Id 
+LEFT JOIN Computer ON ComputerEmployee.ComputerId = Computer.Id 
+WHERE ComputerEmployee. UnassignDate is null AND Employee.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -90,25 +137,42 @@ namespace BangazonAPI.Controllers
 
                     if (reader.Read())
                     {
-                        employee = new Employee
+                        if (!reader.IsDBNull(reader.GetOrdinal("PurchaseDate")))
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
-                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
-                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
-                            DepartmentName = reader.GetString(reader.GetOrdinal("Department Name")),
-                            Computer = new Computer
+                            employee = new Employee
                             {
-                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
-                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
-                                DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
-                                Make = reader.GetString(reader.GetOrdinal("Make")),
-                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
                                 Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
-                            }
-                        };
+                                DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                                DepartmentName = reader.GetString(reader.GetOrdinal("Department Name")),
+                                Computer = new Computer
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                                    DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                                    Make = reader.GetString(reader.GetOrdinal("Make")),
+                                    Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                    Archived = reader.GetBoolean(reader.GetOrdinal("Computer Archived")),
+                                }
+                            };
+                        }
+                        else
+                        {
+                            employee = new Employee
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                                Archived = reader.GetBoolean(reader.GetOrdinal("Archived")),
+                                DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                                DepartmentName = reader.GetString(reader.GetOrdinal("Department Name"))
+                            };
+                        }
+                        
                     }
                     reader.Close();
 
