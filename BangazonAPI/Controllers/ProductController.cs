@@ -27,14 +27,16 @@ namespace BangazonAPI.Controllers
             }
         }
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get(bool archived)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
+
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT Product.Id, Product.Price, 
+                    {
+                        cmd.CommandText = @"SELECT Product.Id, Product.Price, 
                                         Product.Title, Product.Description,
                                         Product.Quantity, Product.Archived,
                                         Product.CustomerId AS 'Customer Id',
@@ -43,25 +45,35 @@ namespace BangazonAPI.Controllers
                                         LEFT JOIN Customer on Product.CustomerId = Customer.Id
                                         LEFT JOIN ProductType on Product.ProductTypeId = ProductType.Id";
 
-                    SqlDataReader reader = cmd.ExecuteReader();
-                    List<Product> products = new List<Product>();
-                    while (reader.Read())
-                    {
-                        Product product = new Product
+                        SqlDataReader reader = cmd.ExecuteReader();
+                        List<Product> products = new List<Product>();
+                        while (reader.Read())
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            ProductTypeId = reader.GetInt32(reader.GetOrdinal("Product Type Id")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("Customer Id")),
-                            Price = reader.GetDecimal(reader.GetOrdinal("Price")),
-                            Title = reader.GetString(reader.GetOrdinal("Title")),
-                            Description = reader.GetString(reader.GetOrdinal("Description")),
-                            Quantity = reader.GetInt32(reader.GetOrdinal("Quantity")),
-                            Archived = reader.GetBoolean(reader.GetOrdinal("Archived"))
-                        };
-                        products.Add(product);
+                            Product product = new Product
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                ProductTypeId = reader.GetInt32(reader.GetOrdinal("Product Type Id")),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("Customer Id")),
+                                Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                                Title = reader.GetString(reader.GetOrdinal("Title")),
+                                Description = reader.GetString(reader.GetOrdinal("Description")),
+                                Quantity = reader.GetInt32(reader.GetOrdinal("Quantity")),
+                                Archived = reader.GetBoolean(reader.GetOrdinal("Archived"))
+                            };
+                            if (product.Archived == false)
+                            {
+                                products.Add(product);
+                            }
+                            else
+                            {
+                                reader.Close();
+                                return Ok(products);
+                            };
+
+                        }
+                        reader.Close();
+                        return Ok(products);
                     }
-                    reader.Close();
-                    return Ok(products);
                 }
             }
         }
@@ -83,8 +95,8 @@ namespace BangazonAPI.Controllers
                                         LEFT JOIN Customer on Product.CustomerId = Customer.Id
                                         LEFT JOIN ProductType on Product.ProductTypeId = ProductType.Id
                                         WHERE Product.Id = @id";
-                    
-                    
+
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
                     Product product = null;
@@ -181,7 +193,7 @@ namespace BangazonAPI.Controllers
         }
         [HttpDelete("{id}")]
 
-           /// Method to soft delete by setting archived boolean to true, includes method to hard delete from the database using parameter HardDelete
+        /// Method to soft delete by setting archived boolean to true, includes method to hard delete from the database using parameter HardDelete
         public async Task<IActionResult> Delete([FromRoute] int id, bool HardDelete)
         {
             try
@@ -191,15 +203,17 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        if (HardDelete == true) { 
+                        if (HardDelete == true)
+                        {
 
-                        cmd.CommandText = @"DELETE FROM Product WHERE Id = @id";
-                    } else
-                    {
-                        cmd.CommandText = @"UPDATE Product
+                            cmd.CommandText = @"DELETE FROM Product WHERE Id = @id";
+                        }
+                        else
+                        {
+                            cmd.CommandText = @"UPDATE Product
                                             SET Archived = 1
                                             WHERE id = @id";
-                    }
+                        }
                         cmd.Parameters.Add(new SqlParameter("@id", id));
                         int rowsAffected = cmd.ExecuteNonQuery();
                         if (rowsAffected > 0)
