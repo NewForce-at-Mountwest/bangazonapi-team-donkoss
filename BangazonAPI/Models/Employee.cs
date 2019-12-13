@@ -15,7 +15,15 @@ namespace BangazonAPI.Models
         public string LastName { get; set; }
 
         public int DepartmentId { get; set; }
+      
+        public string DepartmentName { get; set; }
 
         public bool IsSupervisor { get; set; }
+       
+        public Computer Computer { get; set; }
+        public bool Archived { get; set; }
+        
     }
 }
+
+
