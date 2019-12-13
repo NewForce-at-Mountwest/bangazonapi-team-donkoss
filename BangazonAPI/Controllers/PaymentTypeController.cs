@@ -38,7 +38,7 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT PaymentType.Id, PaymentType.AcctNumber, PaymentType.Name, PaymentType.Archived";
+                    cmd.CommandText = "SELECT PaymentType.Id, PaymentType.AcctNumber, PaymentType.Name, PaymentType.Archived, PaymentType.CustomerId AS 'Customer Id' FROM PaymentType LEFT JOIN Customer on PaymentType.CustomerId = Customer.Id";
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<PaymentType> paymentTypes = new List<PaymentType>();
 
@@ -49,6 +49,7 @@ namespace BangazonAPI.Controllers
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             AcctNumber = reader.GetInt32(reader.GetOrdinal("AcctNumber")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
+                            CustomerId = reader.GetInt32(reader.GetOrdinal("Customer Id")),
                             Archived = reader.GetBoolean(reader.GetOrdinal("Archived"))
                         };
 
@@ -70,7 +71,8 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT PaymentType.Id, PaymentType.AcctNumber, PaymentType.Name, PaymentType.Archived WHERE PaymentType.Id = @id";
+                        SELECT PaymentType.Id, PaymentType.AcctNumber, PaymentType.Name, PaymentType.Archived, PaymentType.CustomerId AS 'Customer Id' FROM PaymentType LEFT JOIN Customer on PaymentType.CustomerId = Customer.Id WHERE PaymentType.Id = @id";
+
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -83,6 +85,7 @@ namespace BangazonAPI.Controllers
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             AcctNumber = reader.GetInt32(reader.GetOrdinal("AcctNumber")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
+                            CustomerId = reader.GetInt32(reader.GetOrdinal("Customer Id")),
                             Archived = reader.GetBoolean(reader.GetOrdinal("Archived"))
                         };
                     }
