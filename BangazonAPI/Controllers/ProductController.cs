@@ -41,9 +41,7 @@ namespace BangazonAPI.Controllers
                                         Product.Quantity, Product.Archived,
                                         Product.CustomerId AS 'Customer Id',
                                         Product.ProductTypeId AS 'Product Type Id'
-                                        FROM Product 
-                                        LEFT JOIN Customer on Product.CustomerId = Customer.Id
-                                        LEFT JOIN ProductType on Product.ProductTypeId = ProductType.Id";
+                                        FROM Product";
 
                         SqlDataReader reader = cmd.ExecuteReader();
                         List<Product> products = new List<Product>();
