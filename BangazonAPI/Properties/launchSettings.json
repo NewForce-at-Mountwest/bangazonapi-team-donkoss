@@ -12,11 +12,7 @@
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
-<<<<<<< HEAD
-      "launchUrl": "api/ProductType",
-=======
       "launchUrl": "api/product",
->>>>>>> 1ca06f81909b835d271524e81a263ebd96c65dde
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -24,11 +20,7 @@
     "BangazonAPI": {
       "commandName": "Project",
       "launchBrowser": true,
-<<<<<<< HEAD
-      "launchUrl": "api/ProductType",
-=======
       "launchUrl": "api/product",
->>>>>>> 1ca06f81909b835d271524e81a263ebd96c65dde
       "applicationUrl": "http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
